@@ -25,10 +25,18 @@ function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
 		.attr("transform",
 			"translate(" + margin.left + "," + margin.top + ")");
 
+	// Add title
+	svg.append("text")
+		.attr("x", (width / 2))
+		.attr("text-anchor", "middle")
+		.style("font-size", "24px")
+		.text("Number of proposals by '" + field + "'");
+
+
 	// X axis
 	var x = d3.scaleBand()
-		.range([0, width])
 		.domain(counts.map(function(d) { return d.name; }))
+		.range([0, width])
 		.padding(0.2);
 
 	svg.append("g")
@@ -56,6 +64,7 @@ function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
 		.attr("width", x.bandwidth())
 		.attr("height", function(d) { return height - y(d.count); })
 		.attr("fill", "#69b3a2")
+
 }
 
 function countOccurrences(data, member) {
