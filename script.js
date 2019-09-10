@@ -1,16 +1,21 @@
 console.log("Starting...");
 
+logScales = false;
 let countriesChart = (data, thresh) => freqChart("#vis1", "Country", data, thresh, sortByCount);
 let requestedTimesChart = (data, thresh) => freqChart("#vis2", "RequestedTime", data, thresh, sortByName);
 let allocatedTimesChart = (data, thresh) => freqChart("#vis3", "AllocatedTime", data, thresh, sortByName);
 let requestedInstrumentsChart = (data, thresh) => freqChart("#vis4", "InstrumentRequested", data, thresh, sortByCount);
 
+function drawAll(data) {
+	countriesChart(data, 0);
+	requestedTimesChart(data, 0);
+	allocatedTimesChart(data, 0);
+	requestedInstrumentsChart(data, 0);
+}
+
 d3.json("/data/ISIS.json")
 	.then((data, error) => {
-		countriesChart(data, 0);
-		requestedTimesChart(data, 0);
-		allocatedTimesChart(data, 0);
-		requestedInstrumentsChart(data, 0);
+		drawAll(data);
 		document.getElementById("vis1-thresh-input").addEventListener("input", 
 			evt => countriesChart(data, evt.srcElement.value));
 		document.getElementById("vis2-thresh-input").addEventListener("input", 
@@ -19,6 +24,10 @@ d3.json("/data/ISIS.json")
 			evt => allocatedTimesChart(data, evt.srcElement.value));
 		document.getElementById("vis4-thresh-input").addEventListener("input", 
 			evt => requestedInstrumentsChart(data, evt.srcElement.value));
+		document.getElementById("log-scales-btn").addEventListener("click", e => {
+			logScales = logScales === true ? false : true;
+			drawAll(data);
+		});
 	});
 
 function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
@@ -35,10 +44,17 @@ function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
 		.range([0, width])
 		.padding(0.2);
 
+	var y;
 	// Add Y axis
-	var y = d3.scaleLinear()
-		.domain([0, d3.max(counts, d => d.count)])
-		.range([height, 0]);
+	if(logScales) {
+		y = d3.scaleLog()
+			.domain([1, d3.max(counts, d => d.count)])
+			.range([height, 0]);
+	} else {
+		y = d3.scaleLinear()
+			.domain([0, d3.max(counts, d => d.count)])
+			.range([height, 0]);
+	}
 
 	let svg = buildAxes(containerId, margin, width, height, x, y, counts, field);
 
@@ -46,7 +62,6 @@ function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
 	let bars = svg.selectAll(".bar")
 		.data(counts, d => d.name);
 
-	bars.exit().remove();
 	bars.enter()
 		.append("rect")
 		.attr("class", "bar")
