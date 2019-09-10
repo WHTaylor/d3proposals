@@ -1,10 +1,16 @@
 console.log("Starting...");
 d3.json("/data/ISIS.json")
-	.then((data, error) => freq_chart(".vis", "Country", data, 0));
+	.then((data, error) => {
+		freqChart("#vis1", "Country", data, 0, sortByCount);
+		freqChart("#vis2", "RequestedTime", data, 0, sortByName);
+		freqChart("#vis3", "AllocatedTime", data, 0, sortByName);
+		freqChart("#vis4", "InstrumentRequested", data, 0, sortByCount);
+	});
 
-function freq_chart(containerId, field, data, minOccurThresh) {
-	let prefilterCounts = count_occurences(data, field);
+function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
+	let prefilterCounts = countOccurrences(data, field);
 	let counts = prefilterCounts.filter(e => e.count >=minOccurThresh);
+	counts.sort(sortFunc);
 	// set the dimensions and margins of the graph
 	var margin = {top: 30, right: 30, bottom: 70, left: 60};
 	let width = 960 - margin.left - margin.right;
@@ -22,7 +28,7 @@ function freq_chart(containerId, field, data, minOccurThresh) {
 	// X axis
 	var x = d3.scaleBand()
 		.range([0, width])
-		.domain(counts.map(function(d) { return d.country; }))
+		.domain(counts.map(function(d) { return d.name; }))
 		.padding(0.2);
 
 	svg.append("g")
@@ -45,28 +51,36 @@ function freq_chart(containerId, field, data, minOccurThresh) {
 		.data(counts)
 		.enter()
 		.append("rect")
-		.attr("x", function(d) { return x(d.country); })
+		.attr("x", function(d) { return x(d.name); })
 		.attr("y", function(d) { return y(d.count); })
 		.attr("width", x.bandwidth())
 		.attr("height", function(d) { return height - y(d.count); })
 		.attr("fill", "#69b3a2")
 }
 
-function count_occurences(data, member) {
-	count_dict = {}
+function countOccurrences(data, member) {
+	countDict = {}
 	data.forEach(d => {
 		let val = d[member] == null ? "unknown" 
 			: typeof(d[member]) === "string" ? d[member].toUpperCase() : d[member];
-		if (count_dict[val] === undefined) {
-			count_dict[val] = 1;
+		if (countDict[val] === undefined) {
+			countDict[val] = 1;
 		} else {
-			count_dict[val] += 1;
+			countDict[val] += 1;
 		}
 	});
 
 	counts = [];
-	for (const [country, freq] of Object.entries(count_dict)) {
-		counts.push({"country": country, "count": freq});
+	for (const [country, freq] of Object.entries(countDict)) {
+		counts.push({"name": country, "count": freq});
 	}
 	return counts;
+}
+
+function sortByCount(e1, e2) {
+	return e2["count"] - e1["count"];
+}
+
+function sortByName(e1, e2) {
+	return e2["name"] > e1["name"];
 }
