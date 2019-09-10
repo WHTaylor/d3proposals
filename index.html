@@ -1,13 +1,32 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<link rel="stylesheet" href="styles.css">
 		<script src="https://d3js.org/d3.v5.min.js"></script>
 	</head>
 	<body>
 		<script src="script.js"></script>
-		<div id="vis1"></div>
-		<div id="vis2"></div>
-		<div id="vis3"></div>
-		<div id="vis4"></div>
+		<div id="visualisations">
+			<div class="vis" id="vis1"></div>
+			<div class="input-div">
+				<label for="vis1-thresh-input">Minimum threshold</label>
+				<input id="vis1-thresh-input" type="number" value=0>
+			</div>
+			<div class="vis" id="vis2"></div>
+			<div class="input-div">
+				<label for="vis2-thresh-input">Minimum threshold</label>
+				<input id="vis2-thresh-input" type="number" value=0>
+			</div>
+			<div class="vis" id="vis3"></div>
+			<div class="input-div">
+				<label for="vis3-thresh-input">Minimum threshold</label>
+				<input id="vis3-thresh-input" type="number" value=0>
+			</div>
+			<div class="vis" id="vis4"></div>
+			<div class="input-div">
+				<label for="vis4-thresh-input">Minimum threshold</label>
+				<input id="vis4-thresh-input" type="number" value=0>
+			</div>
+		</div>
 	</body>
 </html>

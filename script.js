@@ -1,10 +1,24 @@
 console.log("Starting...");
+
+let countriesChart = (data, thresh) => freqChart("#vis1", "Country", data, thresh, sortByCount);
+let requestedTimesChart = (data, thresh) => freqChart("#vis2", "RequestedTime", data, thresh, sortByName);
+let allocatedTimesChart = (data, thresh) => freqChart("#vis3", "AllocatedTime", data, thresh, sortByName);
+let requestedInstrumentsChart = (data, thresh) => freqChart("#vis4", "InstrumentRequested", data, thresh, sortByCount);
+
 d3.json("/data/ISIS.json")
 	.then((data, error) => {
-		freqChart("#vis1", "Country", data, 0, sortByCount);
-		freqChart("#vis2", "RequestedTime", data, 0, sortByName);
-		freqChart("#vis3", "AllocatedTime", data, 0, sortByName);
-		freqChart("#vis4", "InstrumentRequested", data, 0, sortByCount);
+		countriesChart(data, 0);
+		requestedTimesChart(data, 0);
+		allocatedTimesChart(data, 0);
+		requestedInstrumentsChart(data, 0);
+		document.getElementById("vis1-thresh-input").addEventListener("input", 
+			evt => countriesChart(data, evt.srcElement.value));
+		document.getElementById("vis2-thresh-input").addEventListener("input", 
+			evt => requestedTimesChart(data, evt.srcElement.value));
+		document.getElementById("vis3-thresh-input").addEventListener("input", 
+			evt => allocatedTimesChart(data, evt.srcElement.value));
+		document.getElementById("vis4-thresh-input").addEventListener("input", 
+			evt => requestedInstrumentsChart(data, evt.srcElement.value));
 	});
 
 function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
@@ -12,13 +26,43 @@ function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
 	let counts = prefilterCounts.filter(e => e.count >=minOccurThresh);
 	counts.sort(sortFunc);
 	// set the dimensions and margins of the graph
-	var margin = {top: 30, right: 30, bottom: 70, left: 60};
+	var margin = {top: 30, right: 30, bottom: 90, left: 60};
 	let width = 960 - margin.left - margin.right;
 	let height = 720 - margin.top - margin.bottom;
+	// X axis
+	var x = d3.scaleBand()
+		.domain(counts.map(function(d) { return d.name; }))
+		.range([0, width])
+		.padding(0.2);
+
+	// Add Y axis
+	var y = d3.scaleLinear()
+		.domain([0, d3.max(counts, d => d.count)])
+		.range([height, 0]);
+
+	let svg = buildAxes(containerId, margin, width, height, x, y, counts, field);
+
+	// Bars
+	let bars = svg.selectAll(".bar")
+		.data(counts, d => d.name);
+
+	bars.exit().remove();
+	bars.enter()
+		.append("rect")
+		.attr("class", "bar")
+		.attr("x", function(d) { return x(d.name); })
+		.attr("y", function(d) { return y(d.count); })
+		.attr("width", x.bandwidth())
+		.attr("height", function(d) { return height - y(d.count); })
+		.attr("fill", "#69b3a2")
+}
+
+function buildAxes(containerId, margin, width, height, x, y, data, field) {
 
 	// append the svg object to the body of the page
-	var svg = d3.select(containerId)
-		.append("svg")
+	var svg = d3.select(containerId);
+	svg.select("svg").remove();
+	svg = svg.append("svg")
 		.attr("width", width + margin.left + margin.right)
 		.attr("height", height + margin.top + margin.bottom)
 		.append("g")
@@ -32,13 +76,6 @@ function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
 		.style("font-size", "24px")
 		.text("Number of proposals by '" + field + "'");
 
-
-	// X axis
-	var x = d3.scaleBand()
-		.domain(counts.map(function(d) { return d.name; }))
-		.range([0, width])
-		.padding(0.2);
-
 	svg.append("g")
 		.attr("transform", "translate(0," + height + ")")
 		.call(d3.axisBottom(x))
@@ -46,26 +83,11 @@ function freqChart(containerId, field, data, minOccurThresh, sortFunc) {
 		.attr("transform", "translate(-10,0)rotate(-45)")
 		.style("text-anchor", "end");
 
-	// Add Y axis
-	var y = d3.scaleLinear()
-		.domain([0, d3.max(counts, d => d.count)])
-		.range([height, 0]);
-
 	svg.append("g")
 		.call(d3.axisLeft(y));
-
-	// Bars
-	svg.selectAll("mybar")
-		.data(counts)
-		.enter()
-		.append("rect")
-		.attr("x", function(d) { return x(d.name); })
-		.attr("y", function(d) { return y(d.count); })
-		.attr("width", x.bandwidth())
-		.attr("height", function(d) { return height - y(d.count); })
-		.attr("fill", "#69b3a2")
-
+	return svg;
 }
+
 
 function countOccurrences(data, member) {
 	countDict = {}
